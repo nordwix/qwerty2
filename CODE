@@ -1,0 +1,103 @@
+import java.util.Scanner;
+
+public class MyDiary {
+    static class DiaryEntry {
+        public String date;
+        public String[] lines;
+
+        public DiaryEntry(String date, String[] lines) {
+            this.date = date;
+            this.lines = lines;
+        }
+
+        public void print() {
+            System.out.println("Дата: " + date);
+            for (String line : lines) {
+                System.out.println(line);
+            }
+            System.out.println("---------");
+        }
+    }
+
+    private static final int MAX_ENTRIES = 50;
+    private static DiaryEntry[] entries = new DiaryEntry[MAX_ENTRIES];
+    private static int entryCount = 0;
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        String choice;
+
+        while (true) {
+            System.out.println("\n1. Додати запис");
+            System.out.println("2. Видалити запис за датою");
+            System.out.println("3. Переглянути всі записи");
+            System.out.println("0. Вийти");
+            System.out.print("Ваш вибір: ");
+            choice = scanner.nextLine();
+
+            switch (choice) {
+                case "1" -> addEntry(scanner);
+                case "2" -> deleteEntry(scanner);
+                case "3" -> viewEntries();
+                case "0" -> System.exit(0);
+                default -> System.out.println("Невірний вибір.");
+            }
+        }
+    }
+
+    private static void addEntry(Scanner scanner) {
+        if (entryCount >= MAX_ENTRIES) {
+            System.out.println("Щоденник заповнений.");
+            return;
+        }
+
+        System.out.print("Введіть дату (формат: YYYY-MM-DD): ");
+        String date = scanner.nextLine().trim();
+
+        System.out.println("Введіть запис (порожній рядок — завершення):");
+        String[] lines = new String[20];  // Максимум 20 рядків на запис
+        int count = 0;
+
+        while (count < lines.length) {
+            String line = scanner.nextLine();
+            if (line.isEmpty()) break;
+            lines[count++] = line;
+        }
+
+        String[] finalLines = new String[count];
+        for (int i = 0; i < count; i++) {
+            finalLines[i] = lines[i];
+        }
+
+        entries[entryCount++] = new DiaryEntry(date, finalLines);
+        System.out.println("Запис додано.");
+    }
+
+    private static void deleteEntry(Scanner scanner) {
+        System.out.print("Введіть дату запису для видалення: ");
+        String date = scanner.nextLine().trim();
+
+        for (int i = 0; i < entryCount; i++) {
+            if (entries[i].date.equals(date)) {
+                // Зсув елементів масиву
+                for (int j = i; j < entryCount - 1; j++) {
+                    entries[j] = entries[j + 1];
+                }
+                entries[--entryCount] = null;
+                System.out.println("Запис видалено.");
+                return;
+            }
+        }
+        System.out.println("Запис не знайдено.");
+    }
+
+    private static void viewEntries() {
+        if (entryCount == 0) {
+            System.out.println("Записів немає.");
+            return;
+        }
+        for (int i = 0; i < entryCount; i++) {
+            entries[i].print();
+        }
+    }
+}
