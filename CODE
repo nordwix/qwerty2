@@ -1,103 +1,318 @@
-import java.util.Scanner;
+import java.util.ArrayList;
+import java.util.List;
 
-public class MyDiary {
-    static class DiaryEntry {
-        public String date;
-        public String[] lines;
-
-        public DiaryEntry(String date, String[] lines) {
-            this.date = date;
-            this.lines = lines;
-        }
-
-        public void print() {
-            System.out.println("Дата: " + date);
-            for (String line : lines) {
-                System.out.println(line);
-            }
-            System.out.println("---------");
-        }
-    }
-
-    private static final int MAX_ENTRIES = 50;
-    private static DiaryEntry[] entries = new DiaryEntry[MAX_ENTRIES];
-    private static int entryCount = 0;
+public class Main {
 
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        String choice;
+        
+        System.out.println("=== 1. Створення об'єктів через Фабрику ===");
+        
+        Reader r1 = LibraryFactory.createReader("R001", "Іван", "Петренко", "050-123-45-67");
+        LibraryFactory.createLibrarian("L001", "Марія", "Василівна", "09:00-17:00");
+        
+        Publication b1 = LibraryFactory.createBook("978-0321", "Clean Code", "Robert Martin", 2008);
+        LibraryFactory.createMagazine("National Geographic", 2024, 5);
+        LibraryFactory.createFictionBook("978-0743", "It", "Stephen King", 1986, "Horror");
 
-        while (true) {
-            System.out.println("\n1. Додати запис");
-            System.out.println("2. Видалити запис за датою");
-            System.out.println("3. Переглянути всі записи");
-            System.out.println("0. Вийти");
-            System.out.print("Ваш вибір: ");
-            choice = scanner.nextLine();
+        System.out.println("\n=== 2. Демонстрація роботи методів ===");
+        r1.borrowItem(b1);
+        b1.issue();
 
-            switch (choice) {
-                case "1" -> addEntry(scanner);
-                case "2" -> deleteEntry(scanner);
-                case "3" -> viewEntries();
-                case "0" -> System.exit(0);
-                default -> System.out.println("Невірний вибір.");
-            }
+        System.out.println("\n=== 3. Демонстрація статичних методів ===");
+        
+        int personCount = Person.getPersonCount();
+        System.out.println("Лічильник з Person.getPersonCount(): " + personCount);
+        
+        int pubCount = Publication.getPublicationCount();
+        System.out.println("Лічильник з Publication.getPublicationCount(): " + pubCount);
+
+        System.out.println("\n=== 4. Фінальний звіт зі Сховища (LibraryStorage) ===");
+        
+        LibraryStorage.showAllAssets();
+    }
+}
+
+abstract class Person {
+
+    private static int personCounter = 0;
+
+    public static class NameInfo {
+        private String firstName;
+        private String lastName;
+
+        public NameInfo(String firstName, String lastName) {
+            this.firstName = firstName;
+            this.lastName = lastName;
+        }
+
+        @Override
+        public String toString() {
+            return firstName + " " + lastName;
         }
     }
 
-    private static void addEntry(Scanner scanner) {
-        if (entryCount >= MAX_ENTRIES) {
-            System.out.println("Щоденник заповнений.");
-            return;
-        }
+    protected String id;
+    protected NameInfo nameInfo;
+    String internalNotes; 
 
-        System.out.print("Введіть дату (формат: YYYY-MM-DD): ");
-        String date = scanner.nextLine().trim();
-
-        System.out.println("Введіть запис (порожній рядок — завершення):");
-        String[] lines = new String[20];  // Максимум 20 рядків на запис
-        int count = 0;
-
-        while (count < lines.length) {
-            String line = scanner.nextLine();
-            if (line.isEmpty()) break;
-            lines[count++] = line;
-        }
-
-        String[] finalLines = new String[count];
-        for (int i = 0; i < count; i++) {
-            finalLines[i] = lines[i];
-        }
-
-        entries[entryCount++] = new DiaryEntry(date, finalLines);
-        System.out.println("Запис додано.");
+    public Person(String id, NameInfo nameInfo) {
+        this.id = id;
+        this.nameInfo = nameInfo;
+        this.internalNotes = "N/A";
+        personCounter++;
     }
 
-    private static void deleteEntry(Scanner scanner) {
-        System.out.print("Введіть дату запису для видалення: ");
-        String date = scanner.nextLine().trim();
+    public String getFullName() {
+        return nameInfo.toString();
+    }
+    
+    public abstract void printDetails();
+    
+    void updateInternalNotes(String notes) {
+        this.internalNotes = notes;
+    }
+    
+    public static int getPersonCount() {
+        return personCounter;
+    }
+}
 
-        for (int i = 0; i < entryCount; i++) {
-            if (entries[i].date.equals(date)) {
-                // Зсув елементів масиву
-                for (int j = i; j < entryCount - 1; j++) {
-                    entries[j] = entries[j + 1];
-                }
-                entries[--entryCount] = null;
-                System.out.println("Запис видалено.");
-                return;
-            }
-        }
-        System.out.println("Запис не знайдено.");
+abstract class Publication {
+
+    private static int publicationCounter = 0;
+    public static final String DEFAULT_STATUS = "в наявності";
+
+    protected String title;
+    protected int publicationYear;
+    protected String status;
+
+    public Publication(String title, int publicationYear) {
+        this.title = title;
+        this.publicationYear = publicationYear;
+        this.status = DEFAULT_STATUS;
+        publicationCounter++;
     }
 
-    private static void viewEntries() {
-        if (entryCount == 0) {
-            System.out.println("Записів немає.");
-            return;
+    public abstract void issue();
+    public abstract void returnItem();
+    
+    public boolean isAvailable() {
+        return this.status.equals(DEFAULT_STATUS);
+    }
+
+    public String getTitle() {
+        return title;
+    }
+    
+    public static int getPublicationCount() {
+        return publicationCounter;
+    }
+
+    @Override
+    public String toString() {
+        return "Publication{" +
+                "title='" + title + '\'' +
+                ", year=" + publicationYear +
+                ", status='" + status + '\'' +
+                '}';
+    }
+}
+
+class Reader extends Person {
+    private String phoneNumber;
+    private List<Publication> borrowedItems;
+
+    public Reader(String id, String firstName, String lastName, String phoneNumber) {
+        super(id, new Person.NameInfo(firstName, lastName));
+        this.phoneNumber = phoneNumber;
+        this.borrowedItems = new ArrayList<>();
+    }
+    
+    @Override
+    public void printDetails() {
+        System.out.println("--- ЧИТАЧ ---");
+        System.out.println("ID: " + id);
+        System.out.println("ПІБ: " + nameInfo.toString());
+        System.out.println("Телефон: " + phoneNumber);
+    }
+
+    public void borrowItem(Publication item) {
+        System.out.println(this.getFullName() + " бере " + item.getTitle());
+        this.borrowedItems.add(item);
+    }
+    
+    public void returnItem(Publication item) {
+        System.out.println(this.getFullName() + " повертає " + item.getTitle());
+        this.borrowedItems.remove(item);
+    }
+}
+
+class Librarian extends Person {
+    private String shift;
+
+    public Librarian(String id, String firstName, String lastName, String shift) {
+        super(id, new Person.NameInfo(firstName, lastName));
+        this.shift = shift;
+    }
+    
+    @Override
+    public void printDetails() {
+        System.out.println("--- БІБЛІОТЕКАР ---");
+        System.out.println("ID: " + id);
+        System.out.println("ПІБ: " + nameInfo.toString());
+        System.out.println("Зміна: " + shift);
+    }
+    
+    public void checkReaderNotes(Reader reader) {
+        System.out.println("Нотатки по читачу " + reader.getFullName() + ": " + reader.internalNotes);
+    }
+}
+
+class Book extends Publication {
+    private String isbn;
+    private String author;
+
+    public Book(String isbn, String title, String author, int publicationYear) {
+        super(title, publicationYear);
+        this.isbn = isbn;
+        this.author = author;
+    }
+
+    @Override
+    public void issue() {
+        System.out.println("Видача КНИГИ: '" + this.title + "' (Автор: " + author + ")");
+        this.status = "видана";
+    }
+    
+    @Override
+    public void returnItem() {
+        System.out.println("Повернення КНИГИ: '" + this.title + "'");
+        this.status = "в наявності";
+    }
+
+    @Override
+    public String toString() {
+        return "Book{" +
+                "title='" + title + '\'' +
+                ", author='" + author + '\'' +
+                ", status='" + status + '\'' +
+                '}';
+    }
+}
+
+class Magazine extends Publication {
+    private int issueNumber;
+
+    public Magazine(String title, int publicationYear, int issueNumber) {
+        super(title, publicationYear);
+        this.issueNumber = issueNumber;
+    }
+
+    @Override
+    public void issue() {
+        System.out.println("Видача ЖУРНАЛУ: '" + this.title + "' (№ " + issueNumber + ")");
+        this.status = "видана";
+    }
+    
+    @Override
+    public void returnItem() {
+        System.out.println("Повернення ЖУРНАЛУ: '" + this.title + "'");
+        this.status = "в наявності";
+    }
+}
+
+class FictionBook extends Book {
+    private String genre;
+
+    public FictionBook(String isbn, String title, String author, int publicationYear, String genre) {
+        super(isbn, title, author, publicationYear);
+        this.genre = genre;
+    }
+    
+    @Override
+    public void issue() {
+        System.out.println("Видача ХУДОЖНЬОЇ КНИГИ: '" + this.title + "' (Жанр: " + genre + ")");
+        this.status = "видана";
+    }
+
+    @Override
+    public String toString() {
+         return "FictionBook{" +
+                "title='" + title + '\'' +
+                ", author='" + author + '\'' +
+                ", genre='" + genre + '\'' +
+                ", status='" + status + '\'' +
+                '}';
+    }
+}
+
+final class LibraryStorage {
+
+    public static final List<Person> ALL_PEOPLE = new ArrayList<>();
+    public static final List<Publication> ALL_PUBLICATIONS = new ArrayList<>();
+
+    private LibraryStorage() {}
+
+    public static void addPerson(Person person) {
+        if (person != null) {
+            ALL_PEOPLE.add(person);
+            System.out.println("STORAGE: Зареєстровано особу: " + person.getFullName());
         }
-        for (int i = 0; i < entryCount; i++) {
-            entries[i].print();
+    }
+
+    public static void addPublication(Publication pub) {
+        if (pub != null) {
+            ALL_PUBLICATIONS.add(pub);
+            System.out.println("STORAGE: Зареєстровано публікацію: " + pub.getTitle());
         }
+    }
+
+    public static void showAllAssets() {
+        System.out.println("\n============== ЗВІТ БІБЛІОТЕКИ ==============");
+        System.out.println("--- Загальна кількість осіб: " + ALL_PEOPLE.size() + " ---");
+        for (Person p : ALL_PEOPLE) {
+            p.printDetails();
+        }
+        
+        System.out.println("\n--- Загальна кількість публікацій: " + ALL_PUBLICATIONS.size() + " ---");
+        for (Publication p : ALL_PUBLICATIONS) {
+            System.out.println(p.toString());
+        }
+        System.out.println("==============================================");
+    }
+}
+
+final class LibraryFactory {
+
+    private LibraryFactory() {}
+
+    public static Reader createReader(String id, String firstName, String lastName, String phone) {
+        Reader reader = new Reader(id, firstName, lastName, phone);
+        LibraryStorage.addPerson(reader);
+        return reader;
+    }
+
+    public static Librarian createLibrarian(String id, String firstName, String lastName, String shift) {
+        Librarian librarian = new Librarian(id, firstName, lastName, shift);
+        LibraryStorage.addPerson(librarian);
+        return librarian;
+    }
+
+    public static Book createBook(String isbn, String title, String author, int year) {
+        Book book = new Book(isbn, title, author, year);
+        LibraryStorage.addPublication(book);
+        return book;
+    }
+    
+    public static FictionBook createFictionBook(String isbn, String title, String author, int year, String genre) {
+        FictionBook book = new FictionBook(isbn, title, author, year, genre);
+        LibraryStorage.addPublication(book);
+        return book;
+    }
+
+    public static Magazine createMagazine(String title, int year, int issueNumber) {
+        Magazine mag = new Magazine(title, year, issueNumber);
+        LibraryStorage.addPublication(mag);
+        return mag;
     }
 }
